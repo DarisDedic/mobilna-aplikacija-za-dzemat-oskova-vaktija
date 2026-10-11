@@ -1,0 +1,6 @@
+{
+  "name": "Vaktija – Džemat Oskova",
+  "description": "Vremena namaza za Džemat Oskova i lokacije širom BiH s tačnim obavijestima i proračunom.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
