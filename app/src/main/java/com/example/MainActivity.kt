@@ -29,6 +29,8 @@ import com.example.ui.screens.QiblaScreen
 import com.example.ui.screens.RamadanTableScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TesbihScreen
+import com.example.ui.screens.DovarnikScreen
+import com.example.ui.screens.PrayerAlarmScreen
 import com.example.ui.theme.VaktijaTheme
 import com.example.ui.viewmodel.MainViewModel
 import com.example.ui.components.UpdateDialogHost
@@ -41,7 +43,9 @@ enum class AppScreen {
     SETTINGS,
     TESBIH,
     KAZA,
-    RAMADAN_TABLE
+    RAMADAN_TABLE,
+    DOVARNIK,
+    PRAYER_ALARM
 }
 
 class MainActivity : ComponentActivity() {
@@ -90,6 +94,9 @@ class MainActivity : ComponentActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
+                if (intent?.getBooleanExtra("EXTRA_OPEN_UPDATE_DIALOG", false) == true) {
+                    viewModel.checkForUpdates(isManual = true)
+                }
             }
 
             VaktijaTheme(themeMode = userPreferences.themeMode) {
@@ -124,6 +131,8 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToTesbih = { currentScreen = AppScreen.TESBIH },
                                 onNavigateToKaza = { currentScreen = AppScreen.KAZA },
                                 onNavigateToRamadanTable = { currentScreen = AppScreen.RAMADAN_TABLE },
+                                onNavigateToDovarnik = { currentScreen = AppScreen.DOVARNIK },
+                                onNavigateToPrayerAlarm = { currentScreen = AppScreen.PRAYER_ALARM },
                                 onToggleSilentMode = { viewModel.toggleSilentMode(it) }
                             )
                         }
@@ -171,6 +180,7 @@ class MainActivity : ComponentActivity() {
                                 onCheckForUpdates = { viewModel.checkForUpdates(isManual = true) },
                                 onSetAutoCheckUpdates = { viewModel.setAutoCheckUpdates(it) },
                                 onSetGithubRepo = { viewModel.setGithubRepo(it) },
+                                onNavigateToPrayerAlarm = { currentScreen = AppScreen.PRAYER_ALARM },
                                 onBack = { currentScreen = AppScreen.HOME }
                             )
                         }
@@ -195,6 +205,26 @@ class MainActivity : ComponentActivity() {
                             RamadanTableScreen(
                                 locationName = displaySchedule?.locationName ?: "Živinice",
                                 schedules = monthSchedules.ifEmpty { listOfNotNull(todaySchedule) },
+                                onBack = { currentScreen = AppScreen.HOME }
+                            )
+                        }
+
+                        AppScreen.DOVARNIK -> {
+                            DovarnikScreen(
+                                onBack = { currentScreen = AppScreen.HOME }
+                            )
+                        }
+
+                        AppScreen.PRAYER_ALARM -> {
+                            PrayerAlarmScreen(
+                                alarmConfig = userPreferences.prayerAlarmConfig,
+                                todaySchedule = todaySchedule,
+                                onToggleAlarm = { target, enabled -> viewModel.togglePrayerAlarm(target, enabled) },
+                                onSetMinutesBefore = { target, min -> viewModel.setPrayerAlarmMinutesBefore(target, min) },
+                                onSetSoundId = { viewModel.setPrayerAlarmSound(it) },
+                                onSetVibrate = { viewModel.setPrayerAlarmVibrate(it) },
+                                onSetVolume = { viewModel.setPrayerAlarmVolume(it) },
+                                onTestAlarm = { viewModel.testAlarmNow(it) },
                                 onBack = { currentScreen = AppScreen.HOME }
                             )
                         }

@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+const val DEFAULT_GITHUB_REPO = "DarisDedic/mobilna-aplikacija-za-dzemat-Oskova"
+const val OLD_DEFAULT_GITHUB_REPO = "asif-omerbegovic/vaktija-oskova"
+const val PREVIOUS_TEMP_GITHUB_REPO = "DarisDedic/mobilna-aplikacija-za-dzemat-oskova-vaktija"
+
 data class UserPreferences(
     val locationId: Int = LocationDatabase.DEFAULT_LOCATION_ID,
     val prayerNotifications: Map<PrayerType, Boolean> = PrayerType.entries.associateWith { true },
@@ -29,7 +33,8 @@ data class UserPreferences(
     val silentModeDurationMinutes: Int = 20,
     val teravihMinutesAfterIsha: Int = 15,
     val autoCheckUpdates: Boolean = true,
-    val githubRepo: String = "asif-omerbegovic/vaktija-oskova"
+    val githubRepo: String = DEFAULT_GITHUB_REPO,
+    val prayerAlarmConfig: com.example.model.PrayerAlarmConfig = com.example.model.PrayerAlarmConfig()
 )
 
 class PreferencesRepository(context: Context) {
@@ -64,7 +69,43 @@ class PreferencesRepository(context: Context) {
         val silentDuration = prefs.getInt(KEY_SILENT_DURATION, 20)
         val teravihAfter = prefs.getInt(KEY_TERAVIH_AFTER, 15)
         val autoUpdates = prefs.getBoolean(KEY_AUTO_UPDATES, true)
-        val repo = prefs.getString(KEY_GITHUB_REPO, "asif-omerbegovic/vaktija-oskova") ?: "asif-omerbegovic/vaktija-oskova"
+        val rawRepo = prefs.getString(KEY_GITHUB_REPO, DEFAULT_GITHUB_REPO) ?: DEFAULT_GITHUB_REPO
+        val repo = if (rawRepo.isBlank() || rawRepo == OLD_DEFAULT_GITHUB_REPO || rawRepo == PREVIOUS_TEMP_GITHUB_REPO) {
+            DEFAULT_GITHUB_REPO
+        } else {
+            rawRepo
+        }
+
+        // Load Prayer Alarm ("Zov na Sedždu") settings
+        val alarmMap = mutableMapOf<com.example.model.AlarmTargetPrayer, com.example.model.SingleAlarmSetting>()
+        for (target in com.example.model.AlarmTargetPrayer.entries) {
+            val isEnabled = prefs.getBoolean(
+                KEY_ALARM_ENABLED_PREFIX + target.id,
+                target == com.example.model.AlarmTargetPrayer.FAJR
+            )
+            val minBefore = prefs.getInt(
+                KEY_ALARM_MINUTES_PREFIX + target.id,
+                target.defaultMinutesBefore
+            )
+            alarmMap[target] = com.example.model.SingleAlarmSetting(
+                target = target,
+                isEnabled = isEnabled,
+                minutesBefore = minBefore
+            )
+        }
+        val alarmSoundId = prefs.getString(KEY_ALARM_SOUND_ID, com.example.audio.PrayerSoundManager.SOUND_EZAN)
+            ?: com.example.audio.PrayerSoundManager.SOUND_EZAN
+        val alarmVibrate = prefs.getBoolean(KEY_ALARM_VIBRATE, true)
+        val alarmVolume = prefs.getFloat(KEY_ALARM_VOLUME, 1.0f)
+        val alarmSnooze = prefs.getInt(KEY_ALARM_SNOOZE, 5)
+
+        val alarmConfig = com.example.model.PrayerAlarmConfig(
+            alarms = alarmMap,
+            soundId = alarmSoundId,
+            vibrate = alarmVibrate,
+            volume = alarmVolume,
+            snoozeMinutes = alarmSnooze
+        )
 
         return UserPreferences(
             locationId = locationId,
@@ -87,7 +128,8 @@ class PreferencesRepository(context: Context) {
             silentModeDurationMinutes = silentDuration,
             teravihMinutesAfterIsha = teravihAfter,
             autoCheckUpdates = autoUpdates,
-            githubRepo = repo
+            githubRepo = repo,
+            prayerAlarmConfig = alarmConfig
         )
     }
 
@@ -178,6 +220,36 @@ class PreferencesRepository(context: Context) {
         updateState()
     }
 
+    fun togglePrayerAlarm(target: com.example.model.AlarmTargetPrayer, enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_ALARM_ENABLED_PREFIX + target.id, enabled).apply()
+        updateState()
+    }
+
+    fun setPrayerAlarmMinutesBefore(target: com.example.model.AlarmTargetPrayer, minutes: Int) {
+        prefs.edit().putInt(KEY_ALARM_MINUTES_PREFIX + target.id, minutes).apply()
+        updateState()
+    }
+
+    fun setPrayerAlarmSound(soundId: String) {
+        prefs.edit().putString(KEY_ALARM_SOUND_ID, soundId).apply()
+        updateState()
+    }
+
+    fun setPrayerAlarmVibrate(vibrate: Boolean) {
+        prefs.edit().putBoolean(KEY_ALARM_VIBRATE, vibrate).apply()
+        updateState()
+    }
+
+    fun setPrayerAlarmVolume(volume: Float) {
+        prefs.edit().putFloat(KEY_ALARM_VOLUME, volume.coerceIn(0.1f, 1.0f)).apply()
+        updateState()
+    }
+
+    fun setPrayerAlarmSnooze(minutes: Int) {
+        prefs.edit().putInt(KEY_ALARM_SNOOZE, minutes.coerceIn(1, 30)).apply()
+        updateState()
+    }
+
     private fun updateState() {
         _userPreferencesFlow.value = loadPreferences()
     }
@@ -204,5 +276,13 @@ class PreferencesRepository(context: Context) {
         private const val KEY_TERAVIH_AFTER = "teravih_after"
         private const val KEY_AUTO_UPDATES = "auto_updates"
         private const val KEY_GITHUB_REPO = "github_repo"
+
+        // Alarm "Zov na Sedždu" keys
+        private const val KEY_ALARM_ENABLED_PREFIX = "alarm_enabled_"
+        private const val KEY_ALARM_MINUTES_PREFIX = "alarm_minutes_"
+        private const val KEY_ALARM_SOUND_ID = "alarm_sound_id"
+        private const val KEY_ALARM_VIBRATE = "alarm_vibrate"
+        private const val KEY_ALARM_VOLUME = "alarm_volume"
+        private const val KEY_ALARM_SNOOZE = "alarm_snooze"
     }
 }

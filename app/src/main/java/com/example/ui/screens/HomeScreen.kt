@@ -22,11 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CompassCalibration
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Mosque
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
@@ -99,6 +101,8 @@ fun HomeScreen(
     onNavigateToTesbih: () -> Unit,
     onNavigateToKaza: () -> Unit,
     onNavigateToRamadanTable: () -> Unit,
+    onNavigateToDovarnik: () -> Unit,
+    onNavigateToPrayerAlarm: () -> Unit,
     onToggleSilentMode: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -124,15 +128,18 @@ fun HomeScreen(
                 onNavigateToHolidays = onNavigateToHolidays,
                 onNavigateToQibla = onNavigateToQibla,
                 onNavigateToDzemat = onNavigateToDzemat,
-                onNavigateToSettings = onNavigateToSettings
+                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToPrayerAlarm = onNavigateToPrayerAlarm
             )
         }
 
-        // Quick Actions Row: Tespih, Kaza, Džamijski mod, Ramazan tabela
+        // Quick Actions Row: Zov na Sedždu, Dovarnik, Tespih, Kaza, Džamijski mod, Ramazan tabela
         item {
             QuickActionsBar(
                 silentModeEnabled = userPreferences.silentModeEnabled,
                 onToggleSilentMode = onToggleSilentMode,
+                onNavigateToPrayerAlarm = onNavigateToPrayerAlarm,
+                onNavigateToDovarnik = onNavigateToDovarnik,
                 onNavigateToTesbih = onNavigateToTesbih,
                 onNavigateToKaza = onNavigateToKaza,
                 onNavigateToRamadanTable = onNavigateToRamadanTable
@@ -219,7 +226,8 @@ private fun HeaderBar(
     onNavigateToHolidays: () -> Unit,
     onNavigateToQibla: () -> Unit,
     onNavigateToDzemat: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToPrayerAlarm: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -261,6 +269,16 @@ private fun HeaderBar(
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            IconButton(
+                onClick = onNavigateToPrayerAlarm,
+                modifier = Modifier.testTag("prayer_alarm_header_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Alarm,
+                    contentDescription = "Zov na Sedždu",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             IconButton(
                 onClick = onNavigateToDzemat,
                 modifier = Modifier.testTag("dzemat_button")
@@ -309,6 +327,8 @@ private fun HeaderBar(
 private fun QuickActionsBar(
     silentModeEnabled: Boolean,
     onToggleSilentMode: (Boolean) -> Unit,
+    onNavigateToPrayerAlarm: () -> Unit,
+    onNavigateToDovarnik: () -> Unit,
     onNavigateToTesbih: () -> Unit,
     onNavigateToKaza: () -> Unit,
     onNavigateToRamadanTable: () -> Unit
@@ -363,7 +383,109 @@ private fun QuickActionsBar(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 3 Quick Action Buttons
+            // Primary Highlight Row: 1. Zov na Sedždu, 2. Dovarnik (Zbirka dova)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Zov na Sedždu Card
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onNavigateToPrayerAlarm() }
+                        .testTag("quick_prayer_alarm_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Alarm,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "Zov na Sedždu",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                            Text(
+                                text = "Budilnik namaza",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 10.sp
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Dovarnik Card
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onNavigateToDovarnik() }
+                        .testTag("quick_dovarnik_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MenuBook,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "Zbirka dova",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                            Text(
+                                text = "Dovarnik i zikrovi",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 10.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Secondary Quick Action Buttons: Tespih, Kaza namazi, Ramazan vaktija
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -371,23 +493,23 @@ private fun QuickActionsBar(
                 // 1. Tespih
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                     modifier = Modifier
                         .weight(1f)
                         .clickable { onNavigateToTesbih() }
                         .testTag("quick_tesbih_button")
                 ) {
                     Column(
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             imageVector = Icons.Default.TouchApp,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = "Tespih",
                             style = MaterialTheme.typography.labelSmall.copy(
@@ -401,23 +523,23 @@ private fun QuickActionsBar(
                 // 2. Kaza namazi
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                     modifier = Modifier
                         .weight(1f)
                         .clickable { onNavigateToKaza() }
                         .testTag("quick_kaza_button")
                 ) {
                     Column(
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             imageVector = Icons.Default.FormatListNumbered,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = "Kaza namazi",
                             style = MaterialTheme.typography.labelSmall.copy(
@@ -431,25 +553,25 @@ private fun QuickActionsBar(
                 // 3. Ramazan Vaktija tabela
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
                     modifier = Modifier
                         .weight(1f)
                         .clickable { onNavigateToRamadanTable() }
                         .testTag("quick_ramadan_table_button")
                 ) {
                     Column(
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = "Ramazan vaktija",
+                            text = "Ramazan",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer

@@ -117,7 +117,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application), S
 
         // Automatic update check if enabled in settings
         if (prefsRepo.userPreferencesFlow.value.autoCheckUpdates) {
-            checkForUpdates(isManual = false)
+            viewModelScope.launch {
+                kotlinx.coroutines.delay(2000)
+                val repo = userPreferences.value.githubRepo
+                app.updateManager.checkForUpdates(repo, isManualCheck = false)
+            }
         }
     }
 
@@ -395,6 +399,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application), S
 
     fun setGithubRepo(repo: String) {
         prefsRepo.setGithubRepo(repo)
+    }
+
+    // "Zov na Sedždu" Prayer Alarm functions
+    fun togglePrayerAlarm(target: com.example.model.AlarmTargetPrayer, enabled: Boolean) {
+        prefsRepo.togglePrayerAlarm(target, enabled)
+        rescheduleWakeAlarms()
+    }
+
+    fun setPrayerAlarmMinutesBefore(target: com.example.model.AlarmTargetPrayer, minutes: Int) {
+        prefsRepo.setPrayerAlarmMinutesBefore(target, minutes)
+        rescheduleWakeAlarms()
+    }
+
+    fun setPrayerAlarmSound(soundId: String) {
+        prefsRepo.setPrayerAlarmSound(soundId)
+        rescheduleWakeAlarms()
+    }
+
+    fun setPrayerAlarmVibrate(vibrate: Boolean) {
+        prefsRepo.setPrayerAlarmVibrate(vibrate)
+        rescheduleWakeAlarms()
+    }
+
+    fun setPrayerAlarmVolume(volume: Float) {
+        prefsRepo.setPrayerAlarmVolume(volume)
+        rescheduleWakeAlarms()
+    }
+
+    fun testAlarmNow(seconds: Int = 5) {
+        val config = userPreferences.value.prayerAlarmConfig
+        com.example.alarm.PrayerWakeAlarmScheduler.scheduleTestAlarm(
+            context = app,
+            seconds = seconds,
+            soundId = config.soundId,
+            vibrate = config.vibrate
+        )
+    }
+
+    private fun rescheduleWakeAlarms() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val prefs = userPreferences.value
+            val today = prayerRepo.getPrayerSchedule(LocalDate.now(), prefs.locationId)
+            val tomorrow = prayerRepo.getPrayerSchedule(LocalDate.now().plusDays(1), prefs.locationId)
+            com.example.alarm.PrayerWakeAlarmScheduler.scheduleAllAlarms(
+                app,
+                today,
+                tomorrow,
+                prefs.prayerAlarmConfig
+            )
+        }
     }
 
     override fun onCleared() {

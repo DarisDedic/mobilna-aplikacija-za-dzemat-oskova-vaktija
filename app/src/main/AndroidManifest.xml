@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -53,6 +55,21 @@
         <!-- Alarm Broadcast Receiver for exact prayer notifications -->
         <receiver
             android:name=".receiver.PrayerAlarmReceiver"
+            android:exported="false" />
+
+        <!-- Dedicated Fullscreen Alarm Ringing Activity for "Zov na Sedždu" -->
+        <activity
+            android:name=".alarm.AlarmActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.MyApplication" />
+
+        <!-- Dedicated Alarm Receiver for "Zov na Sedždu" -->
+        <receiver
+            android:name=".receiver.PrayerWakeAlarmReceiver"
             android:exported="false" />
 
         <!-- Reschedule alarms on device reboot, time change, timezone change, and app update -->

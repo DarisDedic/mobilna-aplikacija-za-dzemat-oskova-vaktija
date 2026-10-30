@@ -41,6 +41,14 @@ class BootReceiver : BroadcastReceiver() {
                     val tomorrowSchedule = prayerRepo.getPrayerSchedule(LocalDate.now().plusDays(1), prefs.locationId)
                     NotificationScheduler.scheduleUpcomingPrayers(context, tomorrowSchedule, prefs)
 
+                    // Reschedule "Zov na Sedždu" wake alarms
+                    com.example.alarm.PrayerWakeAlarmScheduler.scheduleAllAlarms(
+                        context,
+                        todaySchedule,
+                        tomorrowSchedule,
+                        prefs.prayerAlarmConfig
+                    )
+
                     Log.i("BootReceiver", "Alarms successfully rescheduled on $action")
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error rescheduling alarms: ${e.message}")

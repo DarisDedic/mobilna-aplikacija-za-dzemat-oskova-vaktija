@@ -34,7 +34,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
         showNotification(context, prayerType, isReminder, minutesBefore, locationName)
 
-        // Reschedule upcoming prayers in background
+        // Reschedule upcoming prayers in background & check for updates
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -43,6 +43,14 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 val prefs = prefsRepo.userPreferencesFlow.value
                 val schedule = prayerRepo.getPrayerSchedule(LocalDate.now(), prefs.locationId)
                 NotificationScheduler.scheduleUpcomingPrayers(context, schedule, prefs)
+
+                // Silent background update check
+                if (prefs.autoCheckUpdates) {
+                    val updateManager = com.example.updater.UpdateManager(context)
+                    updateManager.checkForUpdates(prefs.githubRepo, isManualCheck = false)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PrayerAlarmReceiver", "Background task error", e)
             } finally {
                 pendingResult.finish()
             }

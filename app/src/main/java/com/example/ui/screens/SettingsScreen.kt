@@ -97,6 +97,7 @@ fun SettingsScreen(
     onCheckForUpdates: () -> Unit,
     onSetAutoCheckUpdates: (Boolean) -> Unit,
     onSetGithubRepo: (String) -> Unit,
+    onNavigateToPrayerAlarm: () -> Unit = {},
     onBack: () -> Unit
 ) {
     BackHandler { onBack() }
@@ -327,6 +328,65 @@ fun SettingsScreen(
                                     modifier = Modifier.testTag("minutes_chip_$mins")
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // 3.5 Zov na Sedždu (Budilnik za Sabah i namaze)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Alarm,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Zov na Sedždu",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "Namaski budilnik za buđenje",
+                                    style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Glasni budilnik sa ezanom i melodijama, posebno prilagođen da vas probudi na sabah i noćni namaz.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onNavigateToPrayerAlarm,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Alarm,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Podesi Zov na Sedždu budilnik")
                         }
                     }
                 }
@@ -662,7 +722,7 @@ fun SettingsScreen(
                             OutlinedTextField(
                                 value = repoInput,
                                 onValueChange = { repoInput = it },
-                                placeholder = { Text("npr. korisnik/vaktija-oskova") },
+                                placeholder = { Text("npr. DarisDedic/mobilna-aplikacija-za-dzemat-Oskova") },
                                 singleLine = true,
                                 modifier = Modifier
                                     .weight(1f)

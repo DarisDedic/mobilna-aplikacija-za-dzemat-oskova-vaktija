@@ -31,13 +31,21 @@ class VaktijaApp : Application() {
 
         // 1. Initialize notification channels
         NotificationScheduler.createNotificationChannels(this)
+        com.example.alarm.PrayerWakeAlarmScheduler.createAlarmNotificationChannel(this)
 
         // 2. Background check and cache priming
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val prefs = preferencesRepository.userPreferencesFlow.value
                 val schedule = prayerRepository.getPrayerSchedule(LocalDate.now(), prefs.locationId)
+                val tomorrowSchedule = prayerRepository.getPrayerSchedule(LocalDate.now().plusDays(1), prefs.locationId)
                 NotificationScheduler.scheduleUpcomingPrayers(this@VaktijaApp, schedule, prefs)
+                com.example.alarm.PrayerWakeAlarmScheduler.scheduleAllAlarms(
+                    this@VaktijaApp,
+                    schedule,
+                    tomorrowSchedule,
+                    prefs.prayerAlarmConfig
+                )
 
                 // Update widgets
                 VaktijaWidgetProvider.updateAllWidgets(this@VaktijaApp)

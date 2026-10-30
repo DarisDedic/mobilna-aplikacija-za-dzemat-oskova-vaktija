@@ -6,8 +6,14 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
 import com.example.BuildConfig
+import com.example.MainActivity
+import com.example.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,7 +75,9 @@ class UpdateManager(private val context: Context) {
             return@withContext
         }
 
-        _updateState.value = UpdateState.Checking
+        if (isManualCheck) {
+            _updateState.value = UpdateState.Checking
+        }
 
         try {
             val apiUrl = "https://api.github.com/repos/$cleanRepo/releases/latest"
@@ -153,6 +161,7 @@ class UpdateManager(private val context: Context) {
                     publishedAt = publishedAt
                 )
                 _updateState.value = UpdateState.Available(info)
+                showUpdateNotification(context, info)
             } else {
                 if (isManualCheck) {
                     _updateState.value = UpdateState.UpToDate(currentVer)
@@ -278,7 +287,56 @@ class UpdateManager(private val context: Context) {
         }
     }
 
+    private fun showUpdateNotification(context: Context, info: UpdateInfo) {
+        try {
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val channelId = "channel_vaktija_updates"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "Ažuriranja aplikacije",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Obavijesti o novim verzijama i nadogradnjama Vaktije"
+                    enableVibration(true)
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("EXTRA_OPEN_UPDATE_DIALOG", true)
+            }
+
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                7777,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val builder = NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("Dostupno ažuriranje: Vaktija ${info.versionName}")
+                .setContentText("Dodirnite da preuzmete i instalirate novu verziju.")
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText("Objavljena je nova verzija ${info.versionName} za Džemat Oskova!\n\n${info.releaseNotes.take(200)}")
+                )
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+
+            notificationManager.notify(UPDATE_NOTIFICATION_ID, builder.build())
+        } catch (e: Exception) {
+            Log.e("UpdateManager", "Ne mogu prikazati obavijest o ažuriranju", e)
+        }
+    }
+
     companion object {
+        const val UPDATE_NOTIFICATION_ID = 8888
         fun isVersionNewer(latest: String, current: String): Boolean {
             val cleanLatest = latest.removePrefix("v").removePrefix("V").trim()
             val cleanCurrent = current.removePrefix("v").removePrefix("V").trim()
